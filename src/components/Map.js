@@ -16,7 +16,7 @@ export const Map = React.memo(({location, imageSource}) => {
     }),
     [location],
   );
-  console.log({regionInfos});
+
   const fitToCoords = useCallback(() => {
     const coordinates = [location, defaultLatLong];
 
@@ -48,13 +48,8 @@ export const Map = React.memo(({location, imageSource}) => {
           <Marker
             ref={iconMarkerRef}
             coordinate={location}
-            identifier="iconMarker">
-            <Image
-              source={{uri: imageSource?.uri}}
-              style={styles.imageStyle}
-              resizeMode="cover"
-            />
-          </Marker>
+            identifier="iconMarker"
+          />
         )}
       </MapView>
     </View>
@@ -64,7 +59,7 @@ export const Map = React.memo(({location, imageSource}) => {
 const styles = StyleSheet.create({
   container: {
     height: '50%',
-    width: '100%',
+    width: '90%',
     alignSelf: 'center',
   },
   map: {

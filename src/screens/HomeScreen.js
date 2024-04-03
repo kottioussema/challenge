@@ -12,10 +12,10 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import GetLocation from 'react-native-get-location';
 
 import {Button} from '../components/Button';
-import {Map} from '../components/Map';
+import {Card} from '../components/Card';
 
 export const HomeScreen = ({}) => {
-  const [attachmentsUpload, setAttachmentsUpload] = useState(null);
+  const [attachmentUpload, setattachmentUpload] = useState(null);
   const [location, setLocation] = useState(null);
   const [disabled, setDisabled] = useState(false);
 
@@ -63,7 +63,7 @@ export const HomeScreen = ({}) => {
     if (!result?.assets?.length) {
       return;
     }
-    setAttachmentsUpload(result?.assets?.[0]);
+    setattachmentUpload(result?.assets?.[0]);
   };
 
   const onLaunchCamera = async () => {
@@ -90,24 +90,7 @@ export const HomeScreen = ({}) => {
   };
   return (
     <SafeAreaView style={styles.safeAreaView}>
-      {!!location?.latitude && attachmentsUpload ? (
-        <>
-          <Image
-            source={{uri: attachmentsUpload?.uri}}
-            style={styles.imageStyle}
-            resizeMode="cover"
-          />
-          <Text style={styles.text}>{'Picture Location'}</Text>
-          <Map location={location} imageSource={attachmentsUpload} />
-        </>
-      ) : (
-        <View style={styles.textContainer}>
-          <Text style={styles.text}>
-            {"Let's take  picture to appear it in our map!!!"}
-          </Text>
-        </View>
-      )}
-
+      <Card location={location} attachmentUpload={attachmentUpload} />
       <View style={styles.buttonsContainer}>
         <Button
           text={'Take picture'}
@@ -130,27 +113,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     justifyContent: 'space-around',
   },
-  textContainer: {
-    height: '50%',
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imageStyle: {
-    width: '80%',
-    height: '30%',
-    borderWidth: 1,
-    borderColor: 'green',
-    borderRadius: 8,
-    alignSelf: 'center',
-  },
   buttonsContainer: {
     flex: 0.3,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-  },
-  text: {
-    color: 'black',
   },
 });
