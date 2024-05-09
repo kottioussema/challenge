@@ -1,16 +1,18 @@
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
   View,
-  Text,
   Platform,
-  Image,
+  Text,
   PermissionsAndroid,
 } from 'react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import GetLocation from 'react-native-get-location';
+import RNFS from 'react-native-fs';
+import {decode} from 'base64-arraybuffer';
 
+import ExifReader from '../../node_modules/exifreader/src/exif-reader.js';
 import {Button} from '../components/Button';
 import {Card} from '../components/Card';
 
@@ -18,6 +20,7 @@ export const HomeScreen = ({}) => {
   const [attachmentUpload, setattachmentUpload] = useState(null);
   const [location, setLocation] = useState(null);
   const [disabled, setDisabled] = useState(false);
+  const [coordinates, setCoordinates] = useState(null);
 
   const requestCameraPermission = async () => {
     if (Platform.OS !== 'ios') {
@@ -25,11 +28,17 @@ export const HomeScreen = ({}) => {
         const granted = await PermissionsAndroid.requestMultiple([
           PermissionsAndroid.PERMISSIONS.CAMERA,
           PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+          PermissionsAndroid.PERMISSIONS.ACCESS_MEDIA_LOCATION,
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
         ]);
 
         if (
           granted['android.permission.CAMERA'] &&
-          granted['android.permission.WRITE_EXTERNAL_STORAGE']
+          granted['android.permission.WRITE_EXTERNAL_STORAGE'] &&
+          granted['android.permission.READ_EXTERNAL_STORAGE'] &&
+          granted['android.permission.ACCESS_MEDIA_LOCATION'] &&
+          granted['android.permission.READ_MEDIA_IMAGES']
         ) {
           console.log('Camera permission given');
         } else {
@@ -40,6 +49,12 @@ export const HomeScreen = ({}) => {
       }
     }
   };
+
+  useEffect(() => {
+    if (attachmentUpload) {
+      getCoordinatesFromExif();
+    }
+  }, [attachmentUpload, getCoordinatesFromExif]);
 
   const getImageLocation = () => {
     setDisabled(true);
@@ -59,7 +74,23 @@ export const HomeScreen = ({}) => {
       });
   };
 
-  const uploadCallback = result => {
+  const getCoordinatesFromExif = useCallback(async () => {
+    try {
+      const b64Buffer = await RNFS?.readFile(
+        attachmentUpload?.originalPath,
+        'base64',
+      );
+      const fileBuffer = decode(b64Buffer);
+      const tags = ExifReader.load(fileBuffer, {expanded: true});
+      const latitude = tags.gps.Latitude;
+      const longitude = tags.gps.Longitude;
+      setCoordinates({latitude, longitude});
+    } catch (error) {
+      console.error('Error reading EXIF data:', error);
+    }
+  }, [attachmentUpload]);
+
+  const uploadCallback = async result => {
     if (!result?.assets?.length) {
       return;
     }
@@ -91,6 +122,13 @@ export const HomeScreen = ({}) => {
   return (
     <SafeAreaView style={styles.safeAreaView}>
       <Card location={location} attachmentUpload={attachmentUpload} />
+      {!!coordinates?.latitude && (
+        <Text
+          style={
+            styles.text
+          }>{`latitude: ${coordinates?.latitude}  longitude: ${coordinates?.longitude} `}</Text>
+      )}
+
       <View style={styles.buttonsContainer}>
         <Button
           text={'Take picture'}
@@ -118,5 +156,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
+  },
+  text: {
+    color: 'black',
+    marginLeft: 5,
   },
 });
